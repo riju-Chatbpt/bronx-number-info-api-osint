@@ -1,0 +1,16 @@
+{
+  "name": "bronx-osint-api",
+  "version": "2.0.0",
+  "description": "BRONX OSINT API - Multi-Key Proxy System",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node api/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
