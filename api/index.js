@@ -44,25 +44,11 @@ const VALID_KEYS = {
         expiresAt: new Date('2026-04-25').getTime(),
         type: 'public'
     },
-    'PUBLIC_AADHAR_KEY': { 
-        scopes: ['aadhar'], 
-        name: 'Aadhar Only',
-        dailyLimit: 50,
-        expiresAt: new Date('2026-04-25').getTime(),
-        type: 'public'
-    },
     'PUBLIC_TG_KEY': { 
         scopes: ['tg'], 
         name: 'Telegram Only',
         dailyLimit: 50,
         expiresAt: new Date('2026-04-20').getTime(),
-        type: 'public'
-    },
-    'PUBLIC_INSTA_KEY': { 
-        scopes: ['insta'], 
-        name: 'Instagram Only',
-        dailyLimit: 50,
-        expiresAt: new Date('2026-04-22').getTime(),
         type: 'public'
     },
     'PUBLIC_VEHICLE_KEY': { 
@@ -123,30 +109,178 @@ function isKeyExpired(keyData) {
     return Date.now() > keyData.expiresAt;
 }
 
-// ========== ENDPOINTS ==========
+// ========== ENDPOINTS WITH EXAMPLE RESPONSES ==========
 const endpoints = [
-    { path: '/number', param: 'num', example: '9876543210', desc: 'Indian Mobile Number Lookup', category: 'Phone Intelligence' },
-    { path: '/aadhar', param: 'num', example: '393933081942', desc: 'Aadhaar Number Lookup', category: 'Phone Intelligence' },
-    { path: '/name', param: 'name', example: 'abhiraaj', desc: 'Search by Name', category: 'Phone Intelligence' },
-    { path: '/numv2', param: 'num', example: '6205949840', desc: 'Number Info v2', category: 'Phone Intelligence' },
-    { path: '/adv', param: 'num', example: '9876543210', desc: 'Advanced Phone Lookup', category: 'Phone Intelligence' },
-    { path: '/upi', param: 'upi', example: 'example@ybl', desc: 'UPI ID Verification', category: 'Financial' },
-    { path: '/ifsc', param: 'ifsc', example: 'SBIN0001234', desc: 'IFSC Code Details', category: 'Financial' },
-    { path: '/pan', param: 'pan', example: 'AXDPR2606K', desc: 'PAN to GST Search', category: 'Financial' },
-    { path: '/pincode', param: 'pin', example: '110001', desc: 'Pincode Details', category: 'Location' },
-    { path: '/ip', param: 'ip', example: '8.8.8.8', desc: 'IP Address Lookup', category: 'Location' },
-    { path: '/vehicle', param: 'vehicle', example: 'MH02FZ0555', desc: 'Vehicle Registration Info', category: 'Vehicle' },
-    { path: '/rc', param: 'owner', example: 'UP92P2111', desc: 'RC Owner Details', category: 'Vehicle' },
-    { path: '/ff', param: 'uid', example: '123456789', desc: 'Free Fire Player Info', category: 'Gaming' },
-    { path: '/bgmi', param: 'uid', example: '5121439477', desc: 'BGMI Player Info', category: 'Gaming' },
-    { path: '/insta', param: 'username', example: 'cristiano', desc: 'Instagram Profile Data', category: 'Social' },
-    { path: '/git', param: 'username', example: 'ftgamer2', desc: 'GitHub Profile', category: 'Social' },
-    { path: '/tg', param: 'info', example: 'JAUUOWNER', desc: 'Telegram User Lookup', category: 'Social' },
-    { path: '/pk', param: 'num', example: '03331234567', desc: 'Pakistan Number v1', category: 'Pakistan' },
-    { path: '/pkv2', param: 'num', example: '3359736848', desc: 'Pakistan Number v2', category: 'Pakistan' }
+    { path: '/number', param: 'num', example: '7307841587', desc: 'Indian Mobile Number Lookup - SIM records, address, relatives, Aadhaar', category: 'Phone Intelligence',
+      exampleResponse: {
+        "success": true,
+        "number": "7307841587",
+        "total": 2,
+        "results": [
+          { "mobile": "7307841587", "name": "Nemsingh", "address": "j gram dabhaura simra post sarsava k tilhar Shahjahanpur Uttar Pradesh 242303", "circle": "JIO UPE", "alternate": "8542812624", "father_name": "jayram", "aadhar": "226010868980", "email": "akaShguptu@gmail.com" },
+          { "mobile": "9219059191", "name": "Premraj", "address": "s/o itwari Tilhar dabhaura simra tilhar Shahjahanpur Uttar Pradesh 242307", "circle": "JIO UPE", "alternate": "7307841587", "father_name": "itwari", "aadhar": "619872770858" }
+        ],
+        "cached": true
+      }
+    },
+    { path: '/aadhar', param: 'num', example: '393933081942', desc: 'Aadhaar Number Lookup - linked records', category: 'Phone Intelligence',
+      exampleResponse: {
+        "success": true,
+        "aadhar": "393933081942",
+        "total": 1,
+        "results": [{ "name": "J Vinod", "phoneNumber": "9490160194", "age": "28", "gender": "Male", "address": "Hyderabad", "district": "HYDERABAD", "state": "TELANGANA" }]
+      }
+    },
+    { path: '/name', param: 'name', example: 'abhiraaj', desc: 'Name - Linked Aadhaar records', category: 'Phone Intelligence',
+      exampleResponse: {
+        "success": true,
+        "name": "abhiraaj",
+        "total": 1,
+        "results": [{ "name": "ABHIRAAJ BALASAHEB GAWADE", "phoneNumber": "9823796702", "age": "6", "gender": "Male", "address": "CHAMDGAD", "district": "KOLHAPUR", "state": "MAHARASHTRA" }]
+      }
+    },
+    { path: '/numv2', param: 'num', example: '6205949840', desc: 'Number Info v2 - alternate database', category: 'Phone Intelligence',
+      exampleResponse: {
+        "success": true,
+        "number": "6205949840",
+        "total": 1,
+        "results": [{ "mobile": "6205949840", "name": "Vikram Yadav", "fname": "Biran Yadav", "address": "Khagaria Bihar 851212", "circle": "BIHAR JIO" }]
+      }
+    },
+    { path: '/adv', param: 'num', example: '9876543210', desc: 'Advanced - Aadhaar linked records', category: 'Phone Intelligence',
+      exampleResponse: {
+        "success": true,
+        "number": "9876543210",
+        "total": 17,
+        "results": [{ "aadharNumber": "527034357255", "name": "RAHUL SHARMA", "address": "MUMBAI", "age": 24, "gender": "MALE", "state": "MAHARASHTRA" }]
+      }
+    },
+    { path: '/upi', param: 'upi', example: 'example@ybl', desc: 'UPI ID verification - name, bank, status', category: 'Financial',
+      exampleResponse: {
+        "success": true,
+        "upi_id": "example@ybl",
+        "valid": true,
+        "account_name": "MURENDRA SARABU",
+        "bank": "Union Bank of India",
+        "ifsc": "UBIN",
+        "psp": "PhonePe"
+      }
+    },
+    { path: '/ifsc', param: 'ifsc', example: 'SBIN0001234', desc: 'IFSC - bank name, branch, payment modes', category: 'Financial',
+      exampleResponse: {
+        "success": true,
+        "ifsc": "SBIN0001234",
+        "bank": "State Bank of India",
+        "branch": "HAJIGANJ",
+        "address": "PATNA, BIHAR",
+        "city": "PATNA",
+        "state": "BIHAR",
+        "payment_modes": { "upi": true, "imps": true, "neft": true, "rtgs": true }
+      }
+    },
+    { path: '/pan', param: 'pan', example: 'AXDPR2606K', desc: 'PAN to GSTIN - linked GST registration', category: 'Financial',
+      exampleResponse: {
+        "success": true,
+        "pan": "AXDPR2606K",
+        "result": { "gstins": [{ "gstin": "192500063179ES0", "status": "Active", "state": "WEST BENGAL" }] }
+      }
+    },
+    { path: '/pincode', param: 'pin', example: '110001', desc: 'Pincode - area, district, post offices', category: 'Location',
+      exampleResponse: {
+        "success": true,
+        "pincode": "110001",
+        "state": "Delhi",
+        "district": "Central Delhi",
+        "country": "India",
+        "total_offices": 21,
+        "post_offices": [{ "name": "Connaught Place", "branch_type": "Sub Post Office" }]
+      }
+    },
+    { path: '/ip', param: 'ip', example: '8.8.8.8', desc: 'IP geolocation - coordinates, ISP, timezone', category: 'Location',
+      exampleResponse: {
+        "success": true,
+        "ip": "8.8.8.8",
+        "country": "United States",
+        "city": "Mountain View",
+        "isp": "Google LLC",
+        "latitude": 37.3860517,
+        "longitude": -122.0838511
+      }
+    },
+    { path: '/vehicle', param: 'vehicle', example: 'MH02FZ0555', desc: 'Vehicle registration - owner, insurance, RC status', category: 'Vehicle',
+      exampleResponse: {
+        "status": "success",
+        "data": { "rc_number": "MH02FZ0555", "owner_name": "SHAH RUKH KHAN", "maker_model": "BLACK BADGE CULLINAN", "fuel_type": "PETROL", "registration_date": "2023-04-12", "rc_status": "ACTIVE" }
+      }
+    },
+    { path: '/rc', param: 'owner', example: 'UP92P2111', desc: 'RC to Owner - detailed ownership & vehicle info', category: 'Vehicle',
+      exampleResponse: {
+        "success": true,
+        "rc": "UP92P2111",
+        "result": { "Owner Name": "SANJU SOLANKI", "Registration Number": "UP92P2111", "Model Name": "HERO MOTOCORP LTD" }
+      }
+    },
+    { path: '/ff', param: 'uid', example: '123456789', desc: 'Free Fire - player info + ban status', category: 'Gaming',
+      exampleResponse: {
+        "success": true,
+        "uid": "123456789",
+        "info": { "Nickname": "Chfjdjs", "Level": "5", "Region": "Br" },
+        "ban": { "ban_status": "BANNED", "ban_period": 6 }
+      }
+    },
+    { path: '/bgmi', param: 'uid', example: '5121439477', desc: 'BGMI - username by player UID', category: 'Gaming',
+      exampleResponse: {
+        "success": true,
+        "uid": "5121439477",
+        "game": "BGMI",
+        "region": "IND",
+        "username": "Kūiūrūaūt"
+      }
+    },
+    { path: '/insta', param: 'username', example: 'cristiano', desc: 'Instagram - profile + linked OSINT records', category: 'Social',
+      exampleResponse: {
+        "success": true,
+        "username": "cristiano",
+        "profile": { "name": "Cristiano Ronaldo", "followers": 672571267, "verified": true },
+        "osint": { "records": [{ "id": "173560420", "email": null, "phone": null }] }
+      }
+    },
+    { path: '/git', param: 'username', example: 'ftgamer2', desc: 'GitHub profile - repos, followers, bio', category: 'Social',
+      exampleResponse: {
+        "success": true,
+        "username": "ftgamer2",
+        "name": "FTGAMERV2",
+        "bio": "Teen dev cooking cool stuff",
+        "public_repos": 6,
+        "followers": 1
+      }
+    },
+    { path: '/tg', param: 'info', example: 'JAUUOWNER', desc: 'Telegram user - profile, phone, linked records', category: 'Social',
+      exampleResponse: {
+        "success": true,
+        "username": "@JAUUOWNER",
+        "data": { "profile": { "full_name": "JAUU OWNER OFFICIAL", "premium": true }, "phone_lookup": { "number": "8140827956", "country": "India" } }
+      }
+    },
+    { path: '/pk', param: 'num', example: '03331234567', desc: 'Pakistan number - subscriber records with CNIC', category: 'Pakistan',
+      exampleResponse: {
+        "success": true,
+        "number": "03331234567",
+        "total": 3,
+        "results": [{ "name": "ASIM ALI", "number": "3331234567", "cnic": "3430125586549", "address": "KARACHI, Sindh" }]
+      }
+    },
+    { path: '/pkv2', param: 'num', example: '3359736848', desc: 'Pakistan number v2 - alternate database', category: 'Pakistan',
+      exampleResponse: {
+        "success": true,
+        "number": "3359736848",
+        "total": 2,
+        "results": [{ "name": "SHAH NAWAZ KHAN", "mobile": "923359736848", "cnic": "1110189490683", "address": "MARDAN" }]
+      }
+    }
 ];
 
-// ========== CLEAN RESPONSE (Remove by, channel, developer - Add @BRONX_ULTRA) ==========
+// ========== CLEAN RESPONSE ==========
 function cleanResponse(data) {
     if (!data) return data;
     let cleaned = JSON.parse(JSON.stringify(data));
@@ -273,8 +407,42 @@ endpoints.forEach(ep => {
     });
 });
 
-// ========== ROOT ROUTE - EXACT PHOTO JASA UI ==========
+// ========== ROOT ROUTE - COMPLETE UI WITH ALL ENDPOINTS ==========
 app.get('/', (req, res) => {
+    // Generate endpoints HTML
+    let endpointsHTML = '';
+    const categories = {};
+    endpoints.forEach(ep => {
+        if (!categories[ep.category]) categories[ep.category] = [];
+        categories[ep.category].push(ep);
+    });
+    
+    const categoryOrder = ['Phone Intelligence', 'Financial', 'Location', 'Vehicle', 'Gaming', 'Social', 'Pakistan'];
+    
+    categoryOrder.forEach(cat => {
+        if (categories[cat]) {
+            endpointsHTML += `<div class="category">📱 ${cat}</div><div class="endpoints-grid">`;
+            categories[cat].forEach(ep => {
+                const exampleResponseJSON = JSON.stringify(ep.exampleResponse, null, 2);
+                endpointsHTML += `
+                    <div class="endpoint-card">
+                        <span class="method">GET</span>
+                        <div class="endpoint-name">${ep.path.replace('/', '').toUpperCase()}</div>
+                        <div class="endpoint-url">/api/key-bronx${ep.path}</div>
+                        <div class="param">📌 ${ep.desc}</div>
+                        <div class="param">🔑 ${ep.param}=${ep.example}</div>
+                        <div class="example-response">
+                            <div class="example-title">📋 Example Response:</div>
+                            <pre class="example-code">${escapeHtml(exampleResponseJSON.substring(0, 300))}${exampleResponseJSON.length > 300 ? '...' : ''}</pre>
+                        </div>
+                        <div class="copy-btn" onclick="copyUrl('${ep.path.replace('/', '')}', '${ep.param}', '${ep.example}')">📋 COPY URL →</div>
+                    </div>
+                `;
+            });
+            endpointsHTML += `</div>`;
+        }
+    });
+    
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -292,7 +460,6 @@ app.get('/', (req, res) => {
         }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         
-        /* Header */
         .header { border-bottom: 1px solid #2a2a2a; padding: 30px 0; margin-bottom: 40px; }
         .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
         .logo h1 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #00ff41, #00cc33); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -302,7 +469,6 @@ app.get('/', (req, res) => {
         .stat-value { font-size: 24px; font-weight: 700; color: #00ff41; }
         .stat-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Hero */
         .hero { background: #111; border: 1px solid #222; border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 40px; }
         .hero h2 { font-size: 28px; margin-bottom: 15px; }
         .hero p { color: #888; max-width: 600px; margin: 0 auto; }
@@ -312,13 +478,11 @@ app.get('/', (req, res) => {
         .feature-value { font-size: 28px; font-weight: 700; color: #00ff41; }
         .feature-label { font-size: 11px; color: #666; }
         
-        /* Auth Section */
         .auth-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
         .auth-card { background: #111; border: 1px solid #222; border-radius: 16px; padding: 25px; }
         .auth-card h3 { color: #00ff41; margin-bottom: 15px; font-size: 18px; }
         .code { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; overflow-x: auto; margin: 10px 0; color: #00ff41; }
         
-        /* Rate Limits */
         .rate-card { background: #111; border: 1px solid #222; border-radius: 16px; padding: 25px; margin-bottom: 40px; }
         .rate-grid { display: flex; justify-content: space-around; margin: 20px 0; flex-wrap: wrap; gap: 20px; }
         .rate-item { text-align: center; }
@@ -328,17 +492,20 @@ app.get('/', (req, res) => {
         .error-table th, .error-table td { padding: 10px; text-align: left; border-bottom: 1px solid #222; }
         .error-table th { color: #00ff41; }
         
-        /* Endpoints */
         .category { font-size: 22px; font-weight: 700; margin: 40px 0 20px; padding-left: 15px; border-left: 4px solid #00ff41; }
-        .endpoints-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .endpoint-card { background: #111; border: 1px solid #222; border-radius: 12px; padding: 18px; transition: all 0.3s; cursor: pointer; }
+        .endpoints-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .endpoint-card { background: #111; border: 1px solid #222; border-radius: 12px; padding: 18px; transition: all 0.3s; }
         .endpoint-card:hover { border-color: #00ff41; transform: translateY(-2px); box-shadow: 0 0 15px rgba(0,255,65,0.2); }
         .method { display: inline-block; background: rgba(0,255,65,0.1); color: #00ff41; padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; }
         .endpoint-name { font-size: 16px; font-weight: 600; margin: 10px 0; }
         .endpoint-url { font-family: monospace; font-size: 10px; color: #666; word-break: break-all; }
         .param { font-size: 10px; color: #666; margin-top: 8px; }
+        .example-response { margin-top: 12px; padding-top: 10px; border-top: 1px solid #222; }
+        .example-title { font-size: 10px; color: #00ff41; margin-bottom: 5px; }
+        .example-code { background: #0a0a0a; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 9px; overflow-x: auto; color: #888; max-height: 150px; overflow-y: auto; }
+        .copy-btn { margin-top: 12px; color: #00ff41; font-size: 10px; cursor: pointer; text-align: center; padding: 5px; border: 1px solid #00ff41; border-radius: 6px; transition: 0.3s; }
+        .copy-btn:hover { background: #00ff41; color: #000; }
         
-        /* Keys Section */
         .keys-section { background: #111; border: 1px solid #222; border-radius: 16px; padding: 25px; margin-bottom: 40px; }
         .key-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; margin-top: 15px; }
         .key-card { background: #0a0a0a; border: 1px solid #222; border-radius: 10px; padding: 12px; }
@@ -347,13 +514,11 @@ app.get('/', (req, res) => {
         .key-limit { font-size: 10px; color: #ffcc00; margin-top: 5px; }
         .key-expiry { font-size: 9px; color: #ff4444; margin-top: 3px; }
         
-        /* Footer */
         .footer { text-align: center; padding: 30px 0; border-top: 1px solid #222; margin-top: 40px; color: #666; font-size: 11px; }
         .toast { position: fixed; bottom: 20px; right: 20px; background: #00ff41; color: #000; padding: 10px 20px; border-radius: 8px; font-weight: 600; animation: slideIn 0.3s; z-index: 1000; font-size: 12px; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @media (max-width: 768px) { .auth-section { grid-template-columns: 1fr; } .header-content { flex-direction: column; text-align: center; } .hero h2 { font-size: 20px; } .category { font-size: 18px; } }
+        @media (max-width: 768px) { .auth-section { grid-template-columns: 1fr; } .header-content { flex-direction: column; text-align: center; } .hero h2 { font-size: 20px; } .category { font-size: 18px; } .endpoints-grid { grid-template-columns: 1fr; } }
         a { color: #00ff41; text-decoration: none; }
-        .copy-btn { margin-top: 10px; color: #00ff41; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -426,7 +591,7 @@ app.get('/', (req, res) => {
             <p style="margin-top: 15px; font-size: 11px; color: #666;">💡 Contact <strong style="color: #00ff41;">@BRONX_ULTRA</strong> on Telegram to get keys</p>
         </div>
         
-        <div id="endpoints-container"></div>
+        ${endpointsHTML}
         
         <div class="footer">
             <p>✨ BRONX OSINT API | Powered by <strong style="color: #00ff41;">@BRONX_ULTRA</strong></p>
@@ -436,25 +601,6 @@ app.get('/', (req, res) => {
         </div>
     </div>
     <script>
-        const endpointsData = ${JSON.stringify(endpoints)};
-        const categories = {};
-        endpointsData.forEach(ep => {
-            if (!categories[ep.category]) categories[ep.category] = [];
-            categories[ep.category].push(ep);
-        });
-        
-        const container = document.getElementById('endpoints-container');
-        const order = ['Phone Intelligence', 'Financial', 'Location', 'Vehicle', 'Gaming', 'Social', 'Pakistan'];
-        order.forEach(cat => {
-            if (categories[cat]) {
-                container.innerHTML += \`<div class="category">📱 \${cat}</div><div class="endpoints-grid" id="grid-\${cat.replace(/ /g, '')}"></div>\`;
-                const grid = document.getElementById(\`grid-\${cat.replace(/ /g, '')}\`);
-                categories[cat].forEach(ep => {
-                    grid.innerHTML += \`<div class="endpoint-card" onclick="copyUrl('\${ep.path.replace('/', '')}', '\${ep.param}', '\${ep.example}')"><span class="method">GET</span><div class="endpoint-name">\${ep.path.replace('/', '').toUpperCase()}</div><div class="endpoint-url">/api/key-bronx\${ep.path}</div><div class="param">📌 \${ep.desc}</div><div class="param">🔑 \${ep.param}=\${ep.example}</div><div class="copy-btn">📋 CLICK TO COPY URL →</div></div>\`;
-                });
-            }
-        });
-        
         function copyUrl(endpoint, param, example) {
             const url = window.location.origin + '/api/key-bronx/' + endpoint + '?key=YOUR_KEY&' + param + '=' + example;
             navigator.clipboard.writeText(url);
@@ -467,6 +613,16 @@ app.get('/', (req, res) => {
     </script>
 </body>
 </html>`;
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
     res.send(html);
 });
 
@@ -489,12 +645,10 @@ app.get('/api/info', (req, res) => {
     });
 });
 
-// ========== TEST ROUTE ==========
 app.get('/test', (req, res) => {
     res.json({ status: '✅ BRONX OSINT API Running', credit: '@BRONX_ULTRA', time: new Date().toISOString() });
 });
 
-// ========== QUOTA CHECK ==========
 app.get('/quota', (req, res) => {
     const key = req.query.key;
     if (!key) return res.status(400).json({ error: "Missing key parameter" });
@@ -516,7 +670,6 @@ app.get('/quota', (req, res) => {
     });
 });
 
-// ========== LIST ALL KEYS ==========
 app.get('/keys', (req, res) => {
     const publicKeys = {};
     for (const [key, data] of Object.entries(VALID_KEYS)) {
