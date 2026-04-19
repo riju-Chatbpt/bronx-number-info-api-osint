@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | BRONX OSINT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+        
+        :root {
+            --neon: #00ff41;
+            --neon-glow: 0 0 10px rgba(0, 255, 65, 0.3);
+            --bg-card: #111111;
+            --border: #1a1a1a;
+        }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--neon);
+            border-radius: 20px;
+            padding: 40px;
+            width: 350px;
+            text-align: center;
+        }
+        
+        .login-box h2 {
+            color: var(--neon);
+            margin-bottom: 20px;
+        }
+        
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+        
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: var(--neon);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .error-msg {
+            color: #ff4444;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        /* Admin Panel */
+        .admin-panel { display: none; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header h1 { color: var(--neon); }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--neon);
+        }
+        
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .section h3 {
+            color: var(--neon);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: #0a0a0a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+        }
+        
+        button {
+            background: var(--neon);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-danger {
+            background: #ff4444;
+            color: #fff;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--neon);
+            color: var(--neon);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            color: var(--neon);
+        }
+        
+        .actions button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            font-size: 11px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--neon);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 8px;
+            animation: slideIn 0.3s;
+            z-index: 1000;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h2>🔐 ADMIN LOGIN</h2>
+            <input type="password" id="adminPassword" placeholder="Enter Admin Password">
+            <button onclick="login()">Login</button>
+            <div id="loginError" class="error-msg"></div>
+        </div>
+    </div>
+    
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="container">
+            <div class="header">
+                <h1>🔧 BRONX OSINT - ADMIN PANEL</h1>
+                <button onclick="logout()" class="btn-outline">🚪 Logout</button>
+            </div>
+            
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card"><div class="stat-number" id="totalKeys">0</div><div>Total Keys</div></div>
+                <div class="stat-card"><div class="stat-number" id="totalEndpoints">0</div><div>Endpoints</div></div>
+                <div class="stat-card"><div class="stat-number" id="todayRequests">0</div><div>Today's Requests</div></div>
+                <div class="stat-card"><div class="stat-number" id="activeKeys">0</div><div>Active Keys</div></div>
+            </div>
+            
+            <!-- Create Key Section -->
+            <div class="section">
+                <h3>➕ CREATE NEW API KEY</h3>
+                <div class="form-group">
+                    <label>Key Name (e.g., MY_CUSTOM_KEY)</label>
+                    <input type="text" id="newKeyName" placeholder="MY_CUSTOM_KEY">
+                </div>
+                <div class="form-group">
+                    <label>Owner Name</label>
+                    <input type="text" id="newOwnerName" placeholder="Owner Name">
+                </div>
+                <div class="form-group">
+                    <label>Scopes (comma separated endpoints or * for all)</label>
+                    <input type="text" id="newScopes" placeholder="number,aadhar,insta or *">
+                </div>
+                <div class="form-group">
+                    <label>Daily Limit (default: 1000)</label>
+                    <input type="number" id="newDailyLimit" placeholder="1000" value="1000">
+                </div>
+                <div class="form-group">
+                    <label>Expiry Date (optional, leave empty for never)</label>
+                    <input type="datetime-local" id="newExpiresAt">
+                </div>
+                <button onclick="createKey()">Create Key</button>
+            </div>
+            
+            <!-- Keys List -->
+            <div class="section">
+                <h3>🗝️ API KEYS</h3>
+                <div style="overflow-x: auto;">
+                    <table id="keysTable">
+                        <thead>
+                            <tr><th>Key Name</th><th>Owner</th><th>Scopes</th><th>Daily Limit</th><th>Used Today</th><th>Expires</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="keysTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Add Endpoint -->
+            <div class="section">
+                <h3>🔌 ADD / EDIT CUSTOM ENDPOINT</h3>
+                <div class="form-group">
+                    <label>Endpoint Name (e.g., whatsapp)</label>
+                    <input type="text" id="endpointName" placeholder="endpoint_name">
+                </div>
+                <div class="form-group">
+                    <label>Parameter Name (e.g., number, username)</label>
+                    <input type="text" id="endpointParam" placeholder="param_name">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="endpointCategory" placeholder="Custom">
+                </div>
+                <div class="form-group">
+                    <label>Example Value</label>
+                    <input type="text" id="endpointExample" placeholder="example123">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="endpointDesc" rows="2" placeholder="Description of this endpoint"></textarea>
+                </div>
+                <button onclick="addEndpoint()">Add/Update Endpoint</button>
+            </div>
+            
+            <!-- Endpoints List -->
+            <div class="section">
+                <h3>📡 ALL ENDPOINTS</h3>
+                <div style="overflow-x: auto;">
+                    <table id="endpointsTable">
+                        <thead>
+                            <tr><th>Name</th><th>Param</th><th>Category</th><th>Example</th><th>Enabled</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="endpointsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let authToken = '';
+        
+        async function login() {
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === 'BRONX_ADMIN_2026') {
+                authToken = password;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadAllData();
+            } else {
+                document.getElementById('loginError').innerText = 'Invalid password!';
+            }
+        }
+        
+        function logout() {
+            authToken = '';
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('adminPassword').value = '';
+        }
+        
+        async function apiCall(endpoint, method, body = null) {
+            const headers = {
+                'Admin-Password': authToken,
+                'Content-Type': 'application/json'
+            };
+            
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+            
+            const res = await fetch(endpoint, options);
+            return res.json();
+        }
+        
+        async function loadAllData() {
+            await loadStats();
+            await loadKeys();
+            await loadEndpoints();
+        }
+        
+        async function loadStats() {
+            const data = await apiCall('/admin/stats', 'GET');
+            if (data.success) {
+                document.getElementById('totalKeys').innerText = data.stats.totalKeys;
+                document.getElementById('totalEndpoints').innerText = data.stats.totalEndpoints;
+                document.getElementById('todayRequests').innerText = data.stats.totalRequestsToday;
+                document.getElementById('activeKeys').innerText = data.stats.activeKeys;
+            }
+        }
+        
+        async function loadKeys() {
+            const data = await apiCall('/admin/keys', 'GET');
+            if (data.success) {
+                const tbody = document.getElementById('keysTableBody');
+                tbody.innerHTML = '';
+                for (const [key, info] of Object.entries(data.keys)) {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerText = key;
+                    row.insertCell(1).innerText = info.name || '-';
+                    row.insertCell(2).innerText = info.scopes.join(', ');
+                    row.insertCell(3).innerText = info.dailyLimit || 1000;
+                    row.insertCell(4).innerText = info.usedToday || 0;
+                    row.insertCell(5).innerText = info.expiresAt ? new Date(info.expiresAt).toLocaleDateString() : 'Never';
+                    const actions = row.insertCell(6);
+                    actions.className = 'actions';
+                    actions.innerHTML = `
+                        <button onclick="editKey('${key}')">Edit</button>
+                        <button class="btn-danger" onclick="deleteKey('${key}')">Delete</button>
+                    `;
+                }
+            }
+        }
+        
+        async function createKey() {
+            const keyName = document.getElementById('newKeyName').value;
+            const ownerName = document.getElementById('newOwnerName').value;
+            const scopes = document.getElementById('newScopes').value;
+            const dailyLimit = document.getElementById('newDailyLimit').value;
+            const expiresAt = document.getElementById('newExpiresAt').value;
+            
+            if (!keyName || !scopes) {
+                showToast('Please fill required fields');
+                return;
+            }
+            
+            const data = await apiCall('/admin/keys', 'POST', {
+                keyName, ownerName, scopes, dailyLimit, expiresAt: expiresAt || null
+            });
+            
+            if (data.success) {
+                showToast('Key created successfully!');
+                document.getElementById('newKeyName').value = '';
+                document.getElementById('newOwnerName').value = '';
+                document.getElementById('newScopes').value = '';
+                document.getElementById('newDailyLimit').value = '1000';
+                document.getElementById('newExpiresAt').value = '';
+                loadKeys();
+                loadStats();
+            } else {
+                showToast(data.error);
+            }
+        }
+        
+        async function deleteKey(keyName) {
+            if (!confirm(`Delete key "${keyName}"?`)) return;
+            const data = await apiCall(`/admin/keys/${keyName}`, 'DELETE');
+            if (data.success) {
+                showToast('Key deleted!');
+                loadKeys();
+                loadStats();
+            }
+        }
+        
+        function editKey(keyName) {
+            const newScopes = prompt('Enter new scopes (comma separated or *):');
+            if (newScopes !== null) {
+                apiCall(`/admin/keys/${keyName}`, 'PUT', { scopes: newScopes }).then(() => {
+                    showToast('Key updated!');
+                    loadKeys();
+                });
+            }
+        }
+        
+        async function loadEndpoints() {
+            const data = await apiCall('/admin/endpoints', 'GET');
+            if (data.success) {
+                const tbody = document.getElementById('endpointsTableBody');
+                tbody.innerHTML = '';
+                for (const [name, info] of Object.entries(data.endpoints)) {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerText = name;
+                    row.insertCell(1).innerText = info.param;
+                    row.insertCell(2).innerText = info.category;
+                    row.insertCell(3).innerText = info.example;
+                    row.insertCell(4).innerText = info.enabled ? '✅' : '❌';
+                    const actions = row.insertCell(5);
+                    actions.className = 'actions';
+                    actions.innerHTML = `
+                        <button class="btn-danger" onclick="deleteEndpoint('${name}')">Delete</button>
+                    `;
+                }
+            }
+        }
+        
+        async function addEndpoint() {
+            const name = document.getElementById('endpointName').value;
+            const param = document.getElementById('endpointParam').value;
+            const category = document.getElementById('endpointCategory').value;
+            const example = document.getElementById('endpointExample').value;
+            const desc = document.getElementById('endpointDesc').value;
+            
+            if (!name || !param) {
+                showToast('Name and Parameter required');
+                return;
+            }
+            
+            const data = await apiCall('/admin/endpoints', 'POST', {
+                name, param, category, example, desc, enabled: true
+            });
+            
+            if (data.success) {
+                showToast('Endpoint added!');
+                document.getElementById('endpointName').value = '';
+                document.getElementById('endpointParam').value = '';
+                document.getElementById('endpointCategory').value = '';
+                document.getElementById('endpointExample').value = '';
+                document.getElementById('endpointDesc').value = '';
+                loadEndpoints();
+                loadStats();
+            } else {
+                showToast(data.error);
+            }
+        }
+        
+        async function deleteEndpoint(name) {
+            if (!confirm(`Delete endpoint "${name}"?`)) return;
+            const data = await apiCall(`/admin/endpoints/${name}`, 'DELETE');
+            if (data.success) {
+                showToast('Endpoint deleted!');
+                loadEndpoints();
+                loadStats();
+            }
+        }
+        
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
+</body>
+</html>
