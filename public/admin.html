@@ -267,4 +267,29 @@
                 showToast('Endpoint added!');
                 document.getElementById('epName').value = '';
                 document.getElementById('epParam').value = '';
-                document.getElementById('
+                document.getElementById('epCategory').value = '';
+                document.getElementById('epExample').value = '';
+                document.getElementById('epDesc').value = '';
+                loadEndpoints();
+                loadStats();
+            }
+        }
+        
+        async function deleteEndpoint(name) {
+            if (!confirm('Delete this endpoint?')) return;
+            await apiCall(`/admin/endpoints/${name}`, 'DELETE');
+            showToast('Endpoint deleted!');
+            loadEndpoints();
+            loadStats();
+        }
+        
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
+</body>
+</html>
