@@ -4,7 +4,7 @@ const axios = require('axios');
 const app = express();
 
 // ========== CONFIG ==========
-const REAL_API_BASE = 'https://ft-osint.onrender.com/api';
+const REAL_API_BASE = 'https://ft-osint-api.onrender.com/api';
 const REAL_API_KEY = 'nobita';
 
 // ========== DAILY LIMITS ==========
