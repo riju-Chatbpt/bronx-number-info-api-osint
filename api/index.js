@@ -40,12 +40,19 @@ let db = {
     requestCounts: {}
 };
 
-// ========== HELPERS ==========
+// ========== DATE FUNCTIONS (IST - Reset at 2AM) ==========
 function getIndiaDate() {
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
     const istDate = new Date(now.getTime() + istOffset);
     return istDate.toISOString().split('T')[0];
+}
+
+function getHourIST() {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset);
+    return istDate.getUTCHours();
 }
 
 function checkAndResetLimit(apiKey) {
@@ -74,15 +81,21 @@ function incrementRequestCount(apiKey) {
     return db.requestCounts[apiKey].count;
 }
 
+function getRemainingQuota(apiKey) {
+    const today = getIndiaDate();
+    const keyData = db.keys[apiKey];
+    const limit = keyData?.dailyLimit || 1000;
+    if (!db.requestCounts[apiKey] || db.requestCounts[apiKey].date !== today) return limit;
+    return limit - db.requestCounts[apiKey].count;
+}
+
+// ========== CLEAN RESPONSE ==========
 function cleanResponse(data) {
     if (!data) return data;
     let cleaned = JSON.parse(JSON.stringify(data));
     function removeFields(obj) {
         if (!obj || typeof obj !== 'object') return;
-        if (Array.isArray(obj)) {
-            obj.forEach(item => removeFields(item));
-            return;
-        }
+        if (Array.isArray(obj)) { obj.forEach(item => removeFields(item)); return; }
         delete obj.by;
         delete obj.channel;
         delete obj.BY;
@@ -93,7 +106,7 @@ function cleanResponse(data) {
         });
     }
     removeFields(cleaned);
-    cleaned.bronx_credit = "@BRONX_ULTRA";
+    cleaned.by = "@BRONX_ULTRA";
     return cleaned;
 }
 
@@ -112,34 +125,24 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // ========== ADMIN API ==========
 function checkAdmin(req, res, next) {
     const password = req.headers['admin-password'];
-    if (password !== ADMIN_PASSWORD) {
-        return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ success: false, error: 'Unauthorized' });
     next();
 }
 
-// Get all keys
 app.get('/admin/keys', checkAdmin, (req, res) => {
     const keys = {};
     const today = getIndiaDate();
     for (const [key, data] of Object.entries(db.keys)) {
-        keys[key] = {
-            ...data,
-            usedToday: db.requestCounts[key]?.date === today ? db.requestCounts[key].count : 0
-        };
+        keys[key] = { ...data, usedToday: db.requestCounts[key]?.date === today ? db.requestCounts[key].count : 0 };
     }
     res.json({ success: true, keys });
 });
 
-// Create key
 app.post('/admin/keys', checkAdmin, (req, res) => {
     const { keyName, scopes, expiresAt, dailyLimit, ownerName } = req.body;
-    if (!keyName || !scopes) {
-        return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
-    if (db.keys[keyName]) {
-        return res.status(400).json({ success: false, error: 'Key already exists' });
-    }
+    if (!keyName || !scopes) return res.status(400).json({ success: false, error: 'Missing required fields' });
+    if (db.keys[keyName]) return res.status(400).json({ success: false, error: 'Key already exists' });
+    
     db.keys[keyName] = {
         scopes: scopes.includes('*') ? ['*'] : scopes.split(',').map(s => s.trim()),
         name: ownerName || keyName,
@@ -150,76 +153,58 @@ app.post('/admin/keys', checkAdmin, (req, res) => {
     res.json({ success: true, message: 'Key created successfully' });
 });
 
-// Delete key
+app.put('/admin/keys/:keyName', checkAdmin, (req, res) => {
+    const { keyName } = req.params;
+    const { scopes, expiresAt, dailyLimit, ownerName } = req.body;
+    if (!db.keys[keyName]) return res.status(404).json({ success: false, error: 'Key not found' });
+    if (scopes !== undefined) db.keys[keyName].scopes = scopes.includes('*') ? ['*'] : scopes.split(',').map(s => s.trim());
+    if (expiresAt !== undefined) db.keys[keyName].expiresAt = expiresAt ? new Date(expiresAt).getTime() : null;
+    if (dailyLimit !== undefined) db.keys[keyName].dailyLimit = parseInt(dailyLimit);
+    if (ownerName !== undefined) db.keys[keyName].name = ownerName;
+    res.json({ success: true, message: 'Key updated successfully' });
+});
+
 app.delete('/admin/keys/:keyName', checkAdmin, (req, res) => {
     const { keyName } = req.params;
-    if (!db.keys[keyName]) {
-        return res.status(404).json({ success: false, error: 'Key not found' });
-    }
+    if (!db.keys[keyName]) return res.status(404).json({ success: false, error: 'Key not found' });
     delete db.keys[keyName];
     res.json({ success: true, message: 'Key deleted successfully' });
 });
 
-// Get all endpoints
 app.get('/admin/endpoints', checkAdmin, (req, res) => {
     res.json({ success: true, endpoints: db.endpoints });
 });
 
-// Add endpoint
 app.post('/admin/endpoints', checkAdmin, (req, res) => {
     const { name, param, category, example, desc } = req.body;
-    if (!name || !param) {
-        return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
-    db.endpoints[name] = {
-        param,
-        category: category || 'Custom',
-        example: example || '',
-        desc: desc || 'Custom API Endpoint',
-        enabled: true
-    };
+    if (!name || !param) return res.status(400).json({ success: false, error: 'Missing required fields' });
+    db.endpoints[name] = { param, category: category || 'Custom', example: example || '', desc: desc || 'Custom API Endpoint', enabled: true };
     res.json({ success: true, message: 'Endpoint added successfully' });
 });
 
-// Delete endpoint
 app.delete('/admin/endpoints/:name', checkAdmin, (req, res) => {
     const { name } = req.params;
-    if (!db.endpoints[name]) {
-        return res.status(404).json({ success: false, error: 'Endpoint not found' });
-    }
+    if (!db.endpoints[name]) return res.status(404).json({ success: false, error: 'Endpoint not found' });
     delete db.endpoints[name];
     res.json({ success: true, message: 'Endpoint deleted successfully' });
 });
 
-// Stats
 app.get('/admin/stats', checkAdmin, (req, res) => {
     const today = getIndiaDate();
     let totalRequestsToday = 0;
     for (const [key, data] of Object.entries(db.requestCounts)) {
         if (data.date === today) totalRequestsToday += data.count;
     }
-    res.json({
-        success: true,
-        stats: {
-            totalKeys: Object.keys(db.keys).length,
-            totalEndpoints: Object.keys(db.endpoints).length,
-            totalRequestsToday
-        }
-    });
+    res.json({ success: true, stats: { totalKeys: Object.keys(db.keys).length, totalEndpoints: Object.keys(db.endpoints).length, totalRequestsToday } });
 });
 
 // ========== API KEY CHECK ==========
 function checkApiKey(req, res, next) {
     const key = req.query.key || req.headers['x-api-key'];
-    if (!key) {
-        return res.status(401).json({ success: false, error: "❌ API Key Required" });
-    }
-    if (!db.keys[key]) {
-        return res.status(403).json({ success: false, error: "❌ Invalid API Key" });
-    }
-    if (!checkAndResetLimit(key)) {
-        return res.status(429).json({ success: false, error: "❌ Daily quota exceeded (1000/day). Resets at 2:00 AM IST" });
-    }
+    if (!key) return res.status(401).json({ success: false, error: "❌ API Key Required" });
+    if (!db.keys[key]) return res.status(403).json({ success: false, error: "❌ Invalid API Key" });
+    if (db.keys[key].expiresAt && db.keys[key].expiresAt < Date.now()) return res.status(403).json({ success: false, error: "❌ API Key Expired" });
+    if (!checkAndResetLimit(key)) return res.status(429).json({ success: false, error: "❌ Daily quota exceeded (1000/day). Resets at 2:00 AM IST" });
     req.apiKey = key;
     next();
 }
@@ -233,40 +218,26 @@ app.get('/api/key-bronx/:endpoint', async (req, res) => {
     const apiKey = req.apiKey;
     
     const ep = db.endpoints[endpoint];
-    if (!ep || !ep.enabled) {
-        return res.status(404).json({ success: false, error: `Endpoint not found: ${endpoint}` });
-    }
+    if (!ep || !ep.enabled) return res.status(404).json({ success: false, error: `Endpoint not found: ${endpoint}` });
     
     const keyData = db.keys[apiKey];
     if (!keyData.scopes.includes('*') && !keyData.scopes.includes(endpoint)) {
-        return res.status(403).json({ success: false, error: `This key cannot access '${endpoint}'` });
+        return res.status(403).json({ success: false, error: `This key cannot access '${endpoint}'. Allowed: ${keyData.scopes.join(', ')}` });
     }
     
     const paramValue = query[ep.param];
     if (!paramValue) {
-        return res.status(400).json({
-            success: false,
-            error: `Missing parameter: ${ep.param}`,
-            example: `?key=YOUR_KEY&${ep.param}=${ep.example}`
-        });
+        return res.status(400).json({ success: false, error: `Missing parameter: ${ep.param}`, example: `?key=YOUR_KEY&${ep.param}=${ep.example}` });
     }
     
     try {
         const realUrl = `${REAL_API_BASE}/${endpoint}?key=${REAL_API_KEY}&${ep.param}=${encodeURIComponent(paramValue)}`;
         console.log(`📡 ${endpoint} -> ${paramValue}`);
-        
         const response = await axios.get(realUrl, { timeout: 30000 });
         const used = incrementRequestCount(apiKey);
         const limit = db.keys[apiKey].dailyLimit || 1000;
-        
         const cleanedData = cleanResponse(response.data);
-        cleanedData.rate_limit = {
-            limit: limit,
-            used: used,
-            remaining: limit - used,
-            reset: "2:00 AM IST"
-        };
-        
+        cleanedData.rate_limit = { limit, used, remaining: limit - used, reset: "2:00 AM IST" };
         res.json(cleanedData);
     } catch (error) {
         console.error(error.message);
@@ -278,21 +249,9 @@ app.get('/api/key-bronx/:endpoint', async (req, res) => {
 app.get('/api/info', (req, res) => {
     const endpointList = {};
     for (const [name, ep] of Object.entries(db.endpoints)) {
-        if (ep.enabled) {
-            endpointList[name] = {
-                description: ep.desc,
-                parameter: ep.param,
-                example: ep.example,
-                category: ep.category
-            };
-        }
+        if (ep.enabled) endpointList[name] = { description: ep.desc, parameter: ep.param, example: ep.example, category: ep.category };
     }
-    res.json({
-        success: true,
-        credit: "@BRONX_ULTRA",
-        total_endpoints: Object.keys(endpointList).length,
-        endpoints: endpointList
-    });
+    res.json({ success: true, credit: "@BRONX_ULTRA", total_endpoints: Object.keys(endpointList).length, endpoints: endpointList });
 });
 
 app.get('/test', (req, res) => {
@@ -303,26 +262,13 @@ app.get('/quota', (req, res) => {
     const key = req.query.key;
     if (!key) return res.status(400).json({ error: "Missing key" });
     if (!db.keys[key]) return res.status(403).json({ error: "Invalid key" });
-    
-    const today = getIndiaDate();
-    const used = db.requestCounts[key]?.date === today ? db.requestCounts[key].count : 0;
+    const remaining = getRemainingQuota(key);
     const limit = db.keys[key].dailyLimit || 1000;
-    res.json({
-        success: true,
-        limit: limit,
-        used: used,
-        remaining: limit - used,
-        reset: "2:00 AM IST"
-    });
+    res.json({ success: true, limit, used: limit - remaining, remaining, reset: "2:00 AM IST" });
 });
 
-// Serve HTML files
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
-});
+// Serve HTML
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'index.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'admin.html')));
 
 module.exports = app;
