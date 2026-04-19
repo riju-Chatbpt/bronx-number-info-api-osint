@@ -1,16 +1,15 @@
 {
-  "name": "bronx-osint-api",
-  "version": "2.0.0",
-  "description": "BRONX OSINT API - Neon Edition with Daily Limits",
-  "main": "api/index.js",
-  "scripts": {
-    "start": "node api/index.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "axios": "^1.6.0"
-  },
-  "engines": {
-    "node": ">=18.x"
-  }
+    "version": 2,
+    "builds": [
+        {
+            "src": "api/index.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "api/index.js"
+        }
+    ]
 }
