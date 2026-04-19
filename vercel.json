@@ -1,11 +1,16 @@
 {
-  "version": 2,
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30
-    }
+  "name": "bronx-osint-api",
+  "version": "2.0.0",
+  "description": "BRONX OSINT API - Neon Edition with Daily Limits",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js"
   },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index.js" }
-  ]
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
 }
